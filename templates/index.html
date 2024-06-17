@@ -1,0 +1,240 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Learn a Concept in a Personalized Way</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+        }
+        h1 {
+            margin-bottom: 1rem;
+            color: #333;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        label {
+            font-weight: 700;
+            margin: 0.5rem 0 0.25rem;
+            text-align: left;
+            width: 100%;
+        }
+        input, select {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 0.75rem;
+            border: none;
+            border-radius: 4px;
+            background: #007BFF;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .loading-spinner {
+            display: none;
+            font-size: 2rem;
+            color: #007BFF;
+            text-align: center;
+        }
+        .response {
+            margin-top: 1rem;
+            padding: 1rem;
+            border: 1px solid #007BFF;
+            border-radius: 4px;
+            background: #e9f5ff;
+            color: #333;
+            text-align: left;
+            width: 100%;
+            box-sizing: border-box;
+            overflow-y: auto;
+            white-space: pre-wrap; /* Preserve whitespace and line breaks */
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        input[type="range"] {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .debug-indicator {
+            color: red;
+            font-weight: bold;
+            margin-top: 1rem;
+            display: none;
+            text-align: center;
+        }
+    </style>
+    <script>
+        async function startChat() {
+            console.log("Start Chat triggered");
+            const concept = document.getElementById('concept').value;
+            const profession = document.getElementById('profession').value;
+            const complexity = document.getElementById('complexity').value;
+            const outputDiv = document.getElementById('output');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const debugIndicator = document.getElementById('debug-indicator');
+
+            outputDiv.innerHTML = '';
+            loadingSpinner.style.display = 'block';
+            debugIndicator.style.display = 'block';
+
+            try {
+                const response = await fetch('/learn', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ concept, profession, complexity }),
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let done = false;
+                let textContent = '';
+                let buffer = '';
+
+                while (!done) {
+                    const { value, done: readerDone } = await reader.read();
+                    done = readerDone;
+                    const text = decoder.decode(value, { stream: true });
+                    buffer += text;
+
+                    // Render the latest text chunk sentence by sentence
+                    let sentences = buffer.split('.');
+                    if (!done) {
+                        buffer = sentences.pop();  // Keep the incomplete sentence in buffer
+                    }
+
+                    sentences.forEach(sentence => {
+                        if (sentence.trim().length > 0) {
+                            outputDiv.innerHTML += marked.parse(sentence + '.');
+                        }
+                    });
+                    textContent += text;  // Add processed text to full content
+                    outputDiv.scrollTop = outputDiv.scrollHeight;  // Scroll to the bottom
+                }
+
+                // Refresh HTML output with the entire content rendered in markdown
+                outputDiv.innerHTML = marked.parse(textContent);
+                MathJax.typesetPromise([outputDiv]);  // Render math formulas
+                outputDiv.scrollTop = outputDiv.scrollHeight;  // Scroll to the bottom
+            } catch (error) {
+                console.error("Error:", error);
+                outputDiv.innerHTML = 'An error occurred. Please try again.';
+            } finally {
+                loadingSpinner.style.display = 'none';
+                debugIndicator.style.display = 'none';
+                console.log("Chat completed");
+            }
+        }
+
+        let sliderTimeout;
+        let sliderMouseUp = false;
+
+        function updateComplexityValue() {
+            const complexity = document.getElementById('complexity').value;
+            document.getElementById('complexity-value').textContent = complexity;
+            console.log("Complexity value updated to:", complexity);
+        }
+
+        function autoSubmitForm() {
+            clearTimeout(sliderTimeout);
+            sliderTimeout = setTimeout(() => {
+                if (sliderMouseUp) {
+                    console.log("Auto-submitting form after timeout");
+                    startChat();
+                }
+            }, 2500);
+        }
+
+        document.getElementById('complexity').addEventListener('input', () => {
+            updateComplexityValue();
+            sliderMouseUp = false;
+            autoSubmitForm();
+        });
+
+        document.getElementById('complexity').addEventListener('mouseup', () => {
+            sliderMouseUp = true;
+            console.log("Mouse up detected on slider");
+            autoSubmitForm();
+        });
+
+        const inputElements = document.querySelectorAll('#concept, #profession');
+        inputElements.forEach(element => {
+            element.addEventListener('input', () => {
+                console.log("Input changed, learn button always visible");
+            });
+        });
+
+        // Initialize complexity value on page load
+        document.addEventListener('DOMContentLoaded', updateComplexityValue);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Learn a Concept in a Personalized Way</h1>
+        <form onsubmit="event.preventDefault(); startChat();">
+            <label for="concept">Concept to Learn:</label>
+            <input type="text" id="concept" name="concept" required>
+            
+            <label for="profession">Your Profession:</label>
+            <input type="text" id="profession" name="profession" required>
+            
+            <div class="slider-label">
+                <label for="complexity">Complexity:</label>
+                <span id="complexity-value">3</span>
+            </div>
+            <input type="range" id="complexity" name="complexity" min="1" max="5" value="3">
+            
+            <button type="submit" id="learn-button">Learn</button>
+        </form>
+        <div class="loading-spinner" id="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <div id="output" class="response"></div>
+        <div id="debug-indicator" class="debug-indicator">Request Sent! <span id="timestamp"></span></div>
+    </div>
+</body>
+</html>
