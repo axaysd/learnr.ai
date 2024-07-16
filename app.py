@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, Response, stream_with_context
+from flask import Flask, render_template, request, Response, stream_with_context, jsonify
 from dotenv import load_dotenv
 import openai
 
@@ -12,7 +12,7 @@ app = Flask(__name__)
 api_key = os.getenv('OPENAI_API_KEY')
 openai.api_key = api_key
 
-client = openai.OpenAI(api_key = openai.api_key)
+client = openai.OpenAI(api_key=openai.api_key)
 
 def num_tokens_from_string(string: str, encoding_name: str) -> int:
     """Returns the number of tokens in a text string."""
@@ -70,6 +70,50 @@ def learn():
                 yield chunk_content.encode('utf-8')
 
     return Response(stream_with_context(generate_response()), content_type='text/event-stream')
+
+@app.route('/quiz', methods=['POST'])
+def quiz():
+    data = request.get_json()
+    content = data.get('content', '')
+
+    quiz_prompt = f"Based on the following content, generate an effective quiz question (not simple) in the first line, followed by four options for the quiz on the next four lines. Correct option must always be 4th option.\n\nContent:\n{content}\n\nQuiz Question:"
+
+    def generate_quiz_response():
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Use the latest GPT-4o model
+            messages=[
+                {"role": "system", "content": "You are an expert in generating quiz questions based on content."},
+                {"role": "user", "content": quiz_prompt}
+            ],
+            max_tokens=200,
+            temperature=0.7,  # Adjust temperature for creativity vs. determinism
+            top_p=1,
+            stream=True
+        )
+        for chunk in response:
+            chunk_content = chunk.choices[0].delta.content
+            if chunk_content:
+                yield chunk_content.encode('utf-8')
+
+    full_response = ''
+    for chunk in generate_quiz_response():
+        full_response += chunk.decode('utf-8')
+
+    quiz_data = full_response.strip().split('\n')
+    question = quiz_data[0].strip()
+    print("The question was: ", question)
+    options = [opt.strip() for opt in quiz_data[2:6]]
+    print("The options were: ", options)
+    correct_answer = quiz_data[5].replace("Correct answer:", "").strip()
+    print("The correct_answer was: ", correct_answer)
+
+    quiz = {
+        "question": question,
+        "options": options,
+        "correct_answer": correct_answer
+    }
+
+    return jsonify(quiz)
 
 if __name__ == '__main__':
     app.run(debug=True)
