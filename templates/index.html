@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Learn a Concept in a Personalized Way</title>
+    <title>learnbuddy.ai</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -105,8 +104,42 @@
             display: none;
             text-align: center;
         }
+        .quiz-container {
+            margin-top: 2rem;
+        }
+        .quiz-container h3 {
+            margin-bottom: 1rem;
+        }
+        .quiz-container button {
+            margin-top: 1rem;
+        }
     </style>
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const complexitySlider = document.getElementById('complexity');
+            const complexityValue = document.getElementById('complexity-value');
+
+            const complexityValueText = [
+                "Very simplified",
+                "Simplified",
+                "General",
+                "Technical",
+                "Very technical"
+            ];
+
+            function updateComplexityValue() {
+                const value = complexitySlider.value;
+                complexityValue.textContent = complexityValueText[value - 1];
+                console.log("Complexity value updated to:", complexityValueText[value - 1]);
+            }
+
+            // Initialize complexity value on page load
+            updateComplexityValue();
+
+            // Update complexity value on slider change
+            complexitySlider.addEventListener('input', updateComplexityValue);
+        });
+
         async function startChat() {
             console.log("Start Chat triggered");
             const concept = document.getElementById('concept').value;
@@ -160,6 +193,30 @@
                 outputDiv.innerHTML = marked.parse(textContent);
                 MathJax.typesetPromise([outputDiv]);  // Render math formulas
                 outputDiv.scrollTop = outputDiv.scrollHeight;  // Scroll to the bottom
+
+                // Generate Quiz after content is fully loaded
+                fetch('/quiz', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ content: textContent }),
+                })
+                .then(response => response.json())
+                .then(quiz => {
+                    let quizHtml = '<h3>Quiz</h3>';
+                    quizHtml += '<form id="quizForm">';
+                    quizHtml += '<p>' + quiz.question + '</p>';
+                    quiz.options.forEach((option, index) => {
+                        quizHtml += `<label><input type="radio" name="quiz" value="${option}"> ${String.fromCharCode(65 + index)}) ${option}</label><br>`;
+                    });
+                    quizHtml += '<button type="button" onclick="checkAnswer()">Submit</button>';
+                    quizHtml += '</form>';
+                    document.getElementById('quiz').innerHTML = quizHtml;
+                    document.getElementById('quiz').dataset.correctAnswer = quiz.correct_answer;
+                })
+                .catch(error => console.error('Error generating quiz:', error));
+
             } catch (error) {
                 console.error("Error:", error);
                 outputDiv.innerHTML = 'An error occurred. Please try again.';
@@ -170,14 +227,26 @@
             }
         }
 
+        function checkAnswer() {
+            const options = document.getElementsByName('quiz');
+            let selectedOption;
+            for (const option of options) {
+                if (option.checked) {
+                    selectedOption = option.value;
+                    break;
+                }
+            }
+
+            const correctAnswer = document.getElementById('quiz').dataset.correctAnswer;
+            if (selectedOption === correctAnswer) {
+                alert("Correct answer!");
+            } else {
+                alert("Incorrect answer. The correct answer is: " + correctAnswer);
+            }
+        }
+
         let sliderTimeout;
         let sliderMouseUp = false;
-
-        function updateComplexityValue() {
-            const complexity = document.getElementById('complexity').value;
-            document.getElementById('complexity-value').textContent = complexity;
-            console.log("Complexity value updated to:", complexity);
-        }
 
         function autoSubmitForm() {
             clearTimeout(sliderTimeout);
@@ -207,34 +276,44 @@
                 console.log("Input changed, learn button always visible");
             });
         });
-
-        // Initialize complexity value on page load
-        document.addEventListener('DOMContentLoaded', updateComplexityValue);
     </script>
 </head>
 <body>
     <div class="container">
-        <h1>Learn a Concept in a Personalized Way</h1>
+        <h1>Learn a new concept in a quick, effective, personalized and fun way!</h1>
         <form onsubmit="event.preventDefault(); startChat();">
             <label for="concept">Concept to Learn:</label>
-            <input type="text" id="concept" name="concept" required>
+            <input type="text" id="concept" placeholder="Ex: Pirate metrics" name="concept" required>
             
-            <label for="profession">Your Profession:</label>
-            <input type="text" id="profession" name="profession" required>
+            <label for="profession">Your background</label>
+            <input type="text" id="profession" placeholder="Ex: Product Manager" name="profession">
             
             <div class="slider-label">
-                <label for="complexity">Complexity:</label>
-                <span id="complexity-value">3</span>
+                <label for="complexity">Choose Complexity (Very Simplified, Simplified, General, Technical, Very Technical)</label>
+                <span id="complexity-value">General</span>
             </div>
             <input type="range" id="complexity" name="complexity" min="1" max="5" value="3">
-            
+
+            <!----Cheatsheet element-->
+            <label for="createCheatsheet">Generate a cheatsheet for quick reference?</label>
+            <input type="checkbox" id="createCheatsheet" name="createCheatsheet" value="yes" checked>
+
+            <!----Mindmap element-->
+            <label for="createMindmap">Generate a mindmap for covered concepts?</label>
+            <input type="checkbox" id="createMindmap" name="createMindmap" value="yes" checked>
+
+            <!----Quiz element-->
+            <label for="testUnderstanding">Test understanding with Quiz question(s) at the end?</label>
+            <input type="checkbox" id="testUnderstanding" name="testUnderstanding" value="yes" checked>
+
             <button type="submit" id="learn-button">Learn</button>
         </form>
         <div class="loading-spinner" id="loading-spinner">
             <i class="fas fa-spinner fa-spin"></i>
         </div>
         <div id="output" class="response"></div>
-        <div id="debug-indicator" class="debug-indicator">Request Sent! <span id="timestamp"></span></div>
+        <div id="quiz" class="quiz-container"></div>
+        <div id="debug-indicator" class="debug-indicator">Loading...<span id="timestamp"></span></div>
     </div>
 </body>
 </html>
