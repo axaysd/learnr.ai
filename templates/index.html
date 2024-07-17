@@ -118,6 +118,16 @@
         .graphviz-container {
             margin-top: 2rem;
         }
+        .info-label {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            border: 1px solid #007BFF;
+            border-radius: 4px;
+            background: #e9f5ff;
+            color: #333;
+            text-align: center;
+            font-weight: bold;
+        }
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -156,6 +166,11 @@
             const loadingSpinner = document.getElementById('loading-spinner');
             const debugIndicator = document.getElementById('debug-indicator');
             const generateMindmapCheckbox = document.getElementById('createMindmap');
+            const infoLabel = document.getElementById('info-label');
+
+            document.getElementById('concept').value = concept;  // Update the input box with the new concept
+            infoLabel.innerHTML = `Mindmap for ${concept}. Click on a node to learn more about it.`;
+            infoLabel.style.display = 'block';
 
             outputDiv.innerHTML = '';
             loadingSpinner.style.display = 'block';
@@ -212,7 +227,7 @@
                 })
                 .then(response => response.json())
                 .then(quiz => {
-                    let quizHtml = '<h3>Quiz</h3>';
+                    let quizHtml = '<h3>Test your understanding:</h3>';
                     quizHtml += '<form id="quizForm">';
                     quizHtml += '<p>' + quiz.question + '</p>';
                     quiz.options.forEach((option, index) => {
@@ -290,6 +305,11 @@
                                         event.preventDefault();
                                         const newConcept = node.getAttribute('xlink:href').replace(/^#/, '');
                                         console.log('Clicked node:', newConcept);
+
+                                        // Update the input box and label
+                                        document.getElementById('concept').value = newConcept;
+                                        document.getElementById('info-label').innerHTML = `Mindmap for ${newConcept}. Click on a node to learn more about it.`;
+
                                         startChat(newConcept);
                                     });
                                 });
@@ -392,13 +412,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>Learn a new concept in a quick, effective, personalized and fun way!</h1>
+        <h1>Learn a new concept in an intuitive and personalized way!</h1>
         <form onsubmit="event.preventDefault(); startChat();">
             <label for="concept">Topic to Learn:</label>
-            <input type="text" id="concept" placeholder="Ex: ADHD" name="concept" required>
+            <input type="text" id="concept" placeholder="Ex: Hydrogen Fuel Cells" name="concept" required>
             
             <label for="profession">Your background (optional)</label>
-            <input type="text" id="profession" placeholder="Ex: Product Manager" name="profession">
+            <input type="text" id="profession" placeholder="Ex: Venture Capitalist" name="profession">
             
             <div class="slider-label">
                 <label for="complexity">Choose Complexity (Very Simplified, Simplified, General, Technical, Very Technical)</label>
@@ -424,6 +444,7 @@
             <i class="fas fa-spinner fa-spin"></i>
         </div>
         <div id="output" class="response"></div>
+        <div id="info-label" class="info-label" style="display: none;"></div>
         <div id="mindmap" class="graphviz-container response"></div>
         <button id="download-button" style="display:none;">Download PNG</button>
         <div id="quiz" class="quiz-container"></div>
