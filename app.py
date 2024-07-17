@@ -118,7 +118,7 @@ def mindmap():
     data = request.get_json()
     concept = data['concept']
     
-    mindmap_prompt = f"For {concept}, please draw a visually appealing Graphviz graph to break down the concept into atomic level subtopics to facilitate easy, intuitive learning. Make each and every node (including intermediate nodes and leaf nodes) clickable with a hyperlink that has the node's label as the value."
+    mindmap_prompt = f"For {concept}, please draw a visually appealing Graphviz graph to break down the concept into atomic level subtopics to facilitate easy, intuitive learning. Make each and every node (including intermediate nodes and leaf nodes) clickable with a hyperlink that has the node's label as the value. Hyperlink value must simply be just the node's label, not a link. Only the nodes must be hyperlinked, not the intermediate labels over arrows."
 
     try:
         response = client.chat.completions.create(
