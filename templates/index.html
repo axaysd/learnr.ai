@@ -7,6 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/viz.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/full.render.js"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -113,6 +115,9 @@
         .quiz-container button {
             margin-top: 1rem;
         }
+        .graphviz-container {
+            margin-top: 2rem;
+        }
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -148,6 +153,7 @@
             const outputDiv = document.getElementById('output');
             const loadingSpinner = document.getElementById('loading-spinner');
             const debugIndicator = document.getElementById('debug-indicator');
+            const generateMindmapCheckbox = document.getElementById('createMindmap');
 
             outputDiv.innerHTML = '';
             loadingSpinner.style.display = 'block';
@@ -217,6 +223,11 @@
                 })
                 .catch(error => console.error('Error generating quiz:', error));
 
+                // Generate Mindmap if the checkbox is checked
+                if (generateMindmapCheckbox.checked) {
+                    await generateMindmap(concept);
+                }
+
             } catch (error) {
                 console.error("Error:", error);
                 outputDiv.innerHTML = 'An error occurred. Please try again.';
@@ -224,6 +235,57 @@
                 loadingSpinner.style.display = 'none';
                 debugIndicator.style.display = 'none';
                 console.log("Chat completed");
+            }
+        }
+
+        async function generateMindmap(concept) {
+            console.log("Generate Mindmap triggered with concept:", concept);
+            const mindmapDiv = document.getElementById('mindmap');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const debugIndicator = document.getElementById('debug-indicator');
+
+            mindmapDiv.innerHTML = '';
+            loadingSpinner.style.display = 'block';
+            debugIndicator.style.display = 'block';
+
+            try {
+                const response = await fetch('/mindmap', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ concept }),
+                });
+
+                const mindmap = await response.json();
+                console.log("Mindmap response:", mindmap);
+                if (mindmap.mindmap) {
+                    const viz = new Viz();
+                    const graphvizCode = mindmap.mindmap.match(/```dot([\s\S]*?)```/);
+                    if (graphvizCode) {
+                        viz.renderSVGElement(graphvizCode[1])
+                            .then(element => {
+                                mindmapDiv.appendChild(element);
+                                mindmapDiv.scrollTop = mindmapDiv.scrollHeight;
+                            })
+                            .catch(error => {
+                                console.error("Viz.js error:", error);
+                                mindmapDiv.innerHTML = 'Error rendering mindmap.';
+                            });
+                    } else {
+                        mindmapDiv.innerHTML = 'No valid Graphviz code found.';
+                    }
+                } else {
+                    mindmapDiv.innerHTML = 'No mindmap generated.';
+                }
+
+            } catch (error) {
+                console.error("Error:", error);
+                mindmapDiv.innerHTML = 'An error occurred. Please try again.';
+            } finally {
+                loadingSpinner.style.display = 'none';
+                debugIndicator.style.display = 'none';
+                console.log("Mindmap generation completed");
             }
         }
 
@@ -282,10 +344,10 @@
     <div class="container">
         <h1>Learn a new concept in a quick, effective, personalized and fun way!</h1>
         <form onsubmit="event.preventDefault(); startChat();">
-            <label for="concept">Concept to Learn:</label>
+            <label for="concept">Topic to Learn:</label>
             <input type="text" id="concept" placeholder="Ex: ADHD" name="concept" required>
             
-            <label for="profession">Your background</label>
+            <label for="profession">Your background (optional)</label>
             <input type="text" id="profession" placeholder="Ex: Product Manager" name="profession">
             
             <div class="slider-label">
@@ -312,6 +374,7 @@
             <i class="fas fa-spinner fa-spin"></i>
         </div>
         <div id="output" class="response"></div>
+        <div id="mindmap" class="graphviz-container response"></div>
         <div id="quiz" class="quiz-container"></div>
         <div id="debug-indicator" class="debug-indicator">Loading...<span id="timestamp"></span></div>
     </div>

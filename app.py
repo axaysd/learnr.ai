@@ -2,6 +2,7 @@ import os
 from flask import Flask, render_template, request, Response, stream_with_context, jsonify
 from dotenv import load_dotenv
 import openai
+from openai import OpenAI
 
 # Load environment variables from .env file
 load_dotenv()
@@ -12,7 +13,7 @@ app = Flask(__name__)
 api_key = os.getenv('OPENAI_API_KEY')
 openai.api_key = api_key
 
-client = openai.OpenAI(api_key=openai.api_key)
+client = OpenAI(api_key=api_key)
 
 def num_tokens_from_string(string: str, encoding_name: str) -> int:
     """Returns the number of tokens in a text string."""
@@ -114,6 +115,40 @@ def quiz():
     }
 
     return jsonify(quiz)
+
+@app.route('/mindmap', methods=['POST'])
+def mindmap():
+    data = request.get_json()
+    concept = data['concept']
+    print(f"Received mindmap request for concept: {concept}")
+    
+    mindmap_prompt = f"For {concept} Please draw a visually appealing Graphviz graph with an opinionated recommendation of which topics should be taught in what order. An edge in the graph should denote that a subtopic should be learnt before another."
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Use the latest GPT-4o model
+            messages=[
+                {"role": "system", "content": "You are an expert in creating mind maps using GraphViz."},
+                {"role": "user", "content": mindmap_prompt}
+            ],
+            max_tokens=1000,
+            temperature=0.7,
+            top_p=1,
+            stream=True
+        )
+        full_response = ''
+        for chunk in response:
+            chunk_content = chunk.choices[0].delta.content
+            if chunk_content:
+                full_response += chunk_content
+
+        print("Generated mindmap:", full_response)
+        mindmap = full_response.strip()
+        return jsonify({"mindmap": mindmap})
+
+    except Exception as e:
+        print(f"Error generating mindmap: {e}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
