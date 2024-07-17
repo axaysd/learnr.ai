@@ -120,9 +120,8 @@ def quiz():
 def mindmap():
     data = request.get_json()
     concept = data['concept']
-    print(f"Received mindmap request for concept: {concept}")
     
-    mindmap_prompt = f"For {concept}, Please draw a visually appealing Graphviz graph to breakdown the concept into atomic level subtopics to facilitate easy, intuitive learning."
+    mindmap_prompt = f"For {concept}, please draw a visually appealing Graphviz graph to break down the concept into atomic level subtopics to facilitate easy, intuitive learning. Make each node clickable with a hyperlink that has the node's label as the value."
 
     try:
         response = client.chat.completions.create(
@@ -139,30 +138,14 @@ def mindmap():
         full_response = ''
         for chunk in response:
             chunk_content = chunk.choices[0].delta.content
-            if (chunk_content):
+            if chunk_content:
                 full_response += chunk_content
 
-        print("Generated mindmap:", full_response)
         mindmap = full_response.strip()
         return jsonify({"mindmap": mindmap})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-@app.route('/log', methods=['POST'])
-def log_data():
-    data = request.json
-    concept = data.get('concept')
-    profession = data.get('profession')
-    
-    log_entry = f"Concept: {concept}, Profession: {profession}\n"
-    print("Log entry: ",log_entry)
-    
-    log_file_path = 'user_log.txt'  # Change this path as needed
-    with open(log_file_path, 'a') as log_file:
-        log_file.write(log_entry)
-    
-    return jsonify({"status": "success"}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
