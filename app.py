@@ -102,11 +102,8 @@ def quiz():
 
     quiz_data = full_response.strip().split('\n')
     question = quiz_data[0].strip()
-    print("The question was: ", question)
     options = [opt.strip() for opt in quiz_data[2:6]]
-    print("The options were: ", options)
     correct_answer = quiz_data[5].replace("Correct answer:", "").strip()
-    print("The correct_answer was: ", correct_answer)
 
     quiz = {
         "question": question,
@@ -121,7 +118,7 @@ def mindmap():
     data = request.get_json()
     concept = data['concept']
     
-    mindmap_prompt = f"For {concept}, please draw a visually appealing Graphviz graph to break down the concept into atomic level subtopics to facilitate easy, intuitive learning. Make each node clickable with a hyperlink that has the node's label as the value."
+    mindmap_prompt = f"For {concept}, please draw a visually appealing Graphviz graph to break down the concept into atomic level subtopics to facilitate easy, intuitive learning. Make each and every node (including intermediate nodes and leaf nodes) clickable with a hyperlink that has the node's label as the value."
 
     try:
         response = client.chat.completions.create(
@@ -146,6 +143,21 @@ def mindmap():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/log', methods=['POST'])
+def log_data():
+    data = request.json
+    concept = data.get('concept')
+    profession = data.get('profession')
+
+    log_entry = f"Concept: {concept}, Profession: {profession}\n"
+    print("Log entry: ",log_entry)
+
+    log_file_path = 'user_log.txt'  # Change this path as needed
+    with open(log_file_path, 'a') as log_file:
+        log_file.write(log_entry)
+
+    return jsonify({"status": "success"}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
