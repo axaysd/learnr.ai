@@ -270,12 +270,12 @@
             const loadingSpinner = document.getElementById('loading-spinner');
             const debugIndicator = document.getElementById('debug-indicator');
             const downloadButton = document.getElementById('download-button');
-
-            mindmapDiv.innerHTML = '';
+        
+            mindmapDiv.innerHTML = 'Loading mindmap...';  // Show loading message
             loadingSpinner.style.display = 'block';
             debugIndicator.style.display = 'block';
             downloadButton.style.display = 'none';
-
+        
             try {
                 const response = await fetch('/mindmap', {
                     method: 'POST',
@@ -284,7 +284,7 @@
                     },
                     body: JSON.stringify({ concept }),
                 });
-
+        
                 const mindmap = await response.json();
                 console.log("Mindmap response:", mindmap);
                 if (mindmap.mindmap) {
@@ -294,22 +294,23 @@
                         const graph = graphvizCode[1];
                         viz.renderSVGElement(graph)
                             .then(element => {
+                                mindmapDiv.innerHTML = '';  // Clear the loading message
                                 mindmapDiv.appendChild(element);
                                 mindmapDiv.scrollTop = mindmapDiv.scrollHeight;
                                 downloadButton.style.display = 'block';
                                 downloadButton.onclick = () => downloadPNG(graph);
-
+        
                                 // Make nodes clickable
                                 element.querySelectorAll('a').forEach(node => {
                                     node.addEventListener('click', event => {
                                         event.preventDefault();
                                         const newConcept = node.getAttribute('xlink:href').replace(/^#/, '');
                                         console.log('Clicked node:', newConcept);
-
+        
                                         // Update the input box and label
                                         document.getElementById('concept').value = newConcept;
                                         document.getElementById('info-label').innerHTML = `Mindmap for ${newConcept}. Click on a node to learn more about it.`;
-
+        
                                         startChat(newConcept);
                                     });
                                 });
@@ -324,7 +325,7 @@
                 } else {
                     mindmapDiv.innerHTML = 'No mindmap generated.';
                 }
-
+        
             } catch (error) {
                 console.error("Error:", error);
                 mindmapDiv.innerHTML = 'An error occurred. Please try again.';
