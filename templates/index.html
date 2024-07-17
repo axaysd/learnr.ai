@@ -135,7 +135,6 @@
             function updateComplexityValue() {
                 const value = complexitySlider.value;
                 complexityValue.textContent = complexityValueText[value - 1];
-                console.log("Complexity value updated to:", complexityValueText[value - 1]);
             }
 
             // Initialize complexity value on page load
@@ -146,7 +145,6 @@
         });
 
         async function startChat() {
-            console.log("Start Chat triggered");
             const concept = document.getElementById('concept').value;
             const profession = document.getElementById('profession').value;
             const complexity = document.getElementById('complexity').value;
@@ -228,18 +226,25 @@
                     await generateMindmap(concept);
                 }
 
+                // Log user inputs
+                await fetch('/log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ concept, profession }),
+                });
+
             } catch (error) {
                 console.error("Error:", error);
                 outputDiv.innerHTML = 'An error occurred. Please try again.';
             } finally {
                 loadingSpinner.style.display = 'none';
                 debugIndicator.style.display = 'none';
-                console.log("Chat completed");
             }
         }
 
         async function generateMindmap(concept) {
-            console.log("Generate Mindmap triggered with concept:", concept);
             const mindmapDiv = document.getElementById('mindmap');
             const loadingSpinner = document.getElementById('loading-spinner');
             const debugIndicator = document.getElementById('debug-indicator');
@@ -258,7 +263,6 @@
                 });
 
                 const mindmap = await response.json();
-                console.log("Mindmap response:", mindmap);
                 if (mindmap.mindmap) {
                     const viz = new Viz();
                     const graphvizCode = mindmap.mindmap.match(/```dot([\s\S]*?)```/);
@@ -269,7 +273,6 @@
                                 mindmapDiv.scrollTop = mindmapDiv.scrollHeight;
                             })
                             .catch(error => {
-                                console.error("Viz.js error:", error);
                                 mindmapDiv.innerHTML = 'Error rendering mindmap.';
                             });
                     } else {
@@ -280,12 +283,10 @@
                 }
 
             } catch (error) {
-                console.error("Error:", error);
                 mindmapDiv.innerHTML = 'An error occurred. Please try again.';
             } finally {
                 loadingSpinner.style.display = 'none';
                 debugIndicator.style.display = 'none';
-                console.log("Mindmap generation completed");
             }
         }
 
@@ -314,7 +315,6 @@
             clearTimeout(sliderTimeout);
             sliderTimeout = setTimeout(() => {
                 if (sliderMouseUp) {
-                    console.log("Auto-submitting form after timeout");
                     startChat();
                 }
             }, 2500);
@@ -328,14 +328,12 @@
 
         document.getElementById('complexity').addEventListener('mouseup', () => {
             sliderMouseUp = true;
-            console.log("Mouse up detected on slider");
             autoSubmitForm();
         });
 
         const inputElements = document.querySelectorAll('#concept, #profession');
         inputElements.forEach(element => {
             element.addEventListener('input', () => {
-                console.log("Input changed, learn button always visible");
             });
         });
     </script>
@@ -374,7 +372,7 @@
             <i class="fas fa-spinner fa-spin"></i>
         </div>
         <div id="output" class="response"></div>
-        <div id="mindmap" class="graphviz-container response"></div>
+        <div id="mindmap" class="graphviz-container response">Loading Mindmap...</div>
         <div id="quiz" class="quiz-container"></div>
         <div id="debug-indicator" class="debug-indicator">Loading...<span id="timestamp"></span></div>
     </div>
