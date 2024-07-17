@@ -121,6 +121,7 @@ def mindmap():
     data = request.get_json()
     concept = data['concept']
     print(f"Received mindmap request for concept: {concept}")
+    print(f"Their profession was: {profession}")
     
     mindmap_prompt = f"For {concept}, Please draw a visually appealing Graphviz graph to breakdown the concept into atomic level subtopics to facilitate easy, intuitive learning."
 
