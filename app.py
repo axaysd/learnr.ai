@@ -102,8 +102,11 @@ def quiz():
 
     quiz_data = full_response.strip().split('\n')
     question = quiz_data[0].strip()
+    print("The question was: ", question)
     options = [opt.strip() for opt in quiz_data[2:6]]
+    print("The options were: ", options)
     correct_answer = quiz_data[5].replace("Correct answer:", "").strip()
+    print("The correct_answer was: ", correct_answer)
 
     quiz = {
         "question": question,
@@ -117,6 +120,7 @@ def quiz():
 def mindmap():
     data = request.get_json()
     concept = data['concept']
+    print(f"Received mindmap request for concept: {concept}")
     
     mindmap_prompt = f"For {concept}, Please draw a visually appealing Graphviz graph to breakdown the concept into atomic level subtopics to facilitate easy, intuitive learning."
 
@@ -138,6 +142,7 @@ def mindmap():
             if (chunk_content):
                 full_response += chunk_content
 
+        print("Generated mindmap:", full_response)
         mindmap = full_response.strip()
         return jsonify({"mindmap": mindmap})
 
