@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>learnr.ai</title>
@@ -20,6 +21,7 @@
             padding: 1rem;
             box-sizing: border-box;
         }
+
         .container {
             background: white;
             padding: 2rem;
@@ -30,24 +32,29 @@
             display: flex;
             flex-direction: column;
         }
+
         h1 {
             margin-bottom: 1rem;
             color: #333;
             font-size: 1.5rem;
             text-align: center;
         }
+
         form {
             display: flex;
             flex-direction: column;
             width: 100%;
         }
+
         label {
             font-weight: 700;
             margin: 0.5rem 0 0.25rem;
             text-align: left;
             width: 100%;
         }
-        input, select {
+
+        input,
+        select {
             padding: 0.5rem;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -55,6 +62,7 @@
             width: 100%;
             box-sizing: border-box;
         }
+
         button {
             padding: 0.75rem;
             border: none;
@@ -66,15 +74,18 @@
             width: 100%;
             box-sizing: border-box;
         }
+
         button:hover {
             background: #0056b3;
         }
+
         .loading-spinner {
             display: none;
             font-size: 2rem;
             color: #007BFF;
             text-align: center;
         }
+
         .response {
             margin-top: 1rem;
             padding: 1rem;
@@ -86,8 +97,10 @@
             width: 100%;
             box-sizing: border-box;
             overflow-y: auto;
-            white-space: pre-wrap; /* Preserve whitespace and line breaks */
+            white-space: pre-wrap;
+            /* Preserve whitespace and line breaks */
         }
+
         .slider-label {
             display: flex;
             justify-content: space-between;
@@ -95,10 +108,12 @@
             width: 100%;
             box-sizing: border-box;
         }
+
         input[type="range"] {
             width: 100%;
             box-sizing: border-box;
         }
+
         .debug-indicator {
             color: red;
             font-weight: bold;
@@ -106,18 +121,23 @@
             display: none;
             text-align: center;
         }
+
         .quiz-container {
             margin-top: 2rem;
         }
+
         .quiz-container h3 {
             margin-bottom: 1rem;
         }
+
         .quiz-container button {
             margin-top: 1rem;
         }
+
         .graphviz-container {
             margin-top: 2rem;
         }
+
         .info-label {
             margin-top: 1rem;
             padding: 0.5rem;
@@ -225,20 +245,20 @@
                     },
                     body: JSON.stringify({ content: textContent }),
                 })
-                .then(response => response.json())
-                .then(quiz => {
-                    let quizHtml = '<h3>Test your understanding:</h3>';
-                    quizHtml += '<form id="quizForm">';
-                    quizHtml += '<p>' + quiz.question + '</p>';
-                    quiz.options.forEach((option, index) => {
-                        quizHtml += `<label><input type="radio" name="quiz" value="${option}"> ${String.fromCharCode(65 + index)}) ${option}</label><br>`;
-                    });
-                    quizHtml += '<button type="button" onclick="checkAnswer()">Submit</button>';
-                    quizHtml += '</form>';
-                    document.getElementById('quiz').innerHTML = quizHtml;
-                    document.getElementById('quiz').dataset.correctAnswer = quiz.correct_answer;
-                })
-                .catch(error => console.error('Error generating quiz:', error));
+                    .then(response => response.json())
+                    .then(quiz => {
+                        let quizHtml = '<h3>Test your understanding:</h3>';
+                        quizHtml += '<form id="quizForm">';
+                        quizHtml += '<p>' + quiz.question + '</p>';
+                        quiz.options.forEach((option, index) => {
+                            quizHtml += `<label><input type="radio" name="quiz" value="${option}"> ${String.fromCharCode(65 + index)}) ${option}</label><br>`;
+                        });
+                        quizHtml += '<button type="button" onclick="checkAnswer()">Submit</button>';
+                        quizHtml += '</form>';
+                        document.getElementById('quiz').innerHTML = quizHtml;
+                        document.getElementById('quiz').dataset.correctAnswer = quiz.correct_answer;
+                    })
+                    .catch(error => console.error('Error generating quiz:', error));
 
                 // Generate Mindmap if the checkbox is checked
                 if (generateMindmapCheckbox.checked) {
@@ -270,12 +290,12 @@
             const loadingSpinner = document.getElementById('loading-spinner');
             const debugIndicator = document.getElementById('debug-indicator');
             const downloadButton = document.getElementById('download-button');
-        
+
             mindmapDiv.innerHTML = 'Loading mindmap...';  // Show loading message
             loadingSpinner.style.display = 'block';
             debugIndicator.style.display = 'block';
             downloadButton.style.display = 'none';
-        
+
             try {
                 const response = await fetch('/mindmap', {
                     method: 'POST',
@@ -284,7 +304,7 @@
                     },
                     body: JSON.stringify({ concept }),
                 });
-        
+
                 const mindmap = await response.json();
                 console.log("Mindmap response:", mindmap);
                 if (mindmap.mindmap) {
@@ -299,18 +319,20 @@
                                 mindmapDiv.scrollTop = mindmapDiv.scrollHeight;
                                 downloadButton.style.display = 'block';
                                 downloadButton.onclick = () => downloadPNG(graph);
-        
+
                                 // Make nodes clickable
                                 element.querySelectorAll('a').forEach(node => {
                                     node.addEventListener('click', event => {
                                         event.preventDefault();
                                         const newConcept = node.getAttribute('xlink:href').replace(/^#/, '');
                                         console.log('Clicked node:', newConcept);
-        
+
                                         // Update the input box and label
                                         document.getElementById('concept').value = newConcept;
                                         document.getElementById('info-label').innerHTML = `Mindmap for ${newConcept}. Click on a node to learn more about it.`;
-        
+
+                                        // Reset the graph view and show loading message
+                                        mindmapDiv.innerHTML = 'Loading mindmap...';  // Show loading message
                                         startChat(newConcept);
                                     });
                                 });
@@ -325,7 +347,7 @@
                 } else {
                     mindmapDiv.innerHTML = 'No mindmap generated.';
                 }
-        
+
             } catch (error) {
                 console.error("Error:", error);
                 mindmapDiv.innerHTML = 'An error occurred. Please try again.';
@@ -411,18 +433,20 @@
         });
     </script>
 </head>
+
 <body>
     <div class="container">
         <h1>Learn a new concept in an intuitive and personalized way!</h1>
         <form onsubmit="event.preventDefault(); startChat();">
             <label for="concept">Topic to Learn:</label>
             <input type="text" id="concept" placeholder="Ex: Hydrogen Fuel Cells" name="concept" required>
-            
+
             <label for="profession">Your background (optional)</label>
             <input type="text" id="profession" placeholder="Ex: Investor" name="profession">
-            
+
             <div class="slider-label">
-                <label for="complexity">Choose Complexity (Very Simplified, Simplified, General, Technical, Very Technical)</label>
+                <label for="complexity">Choose Complexity (Very Simplified, Simplified, General, Technical, Very
+                    Technical)</label>
                 <span id="complexity-value">General</span>
             </div>
             <input type="range" id="complexity" name="complexity" min="1" max="5" value="3">
@@ -432,7 +456,8 @@
             <input type="checkbox" id="createCheatsheet" name="createCheatsheet" value="yes" checked>
 
             <!----Mindmap element-->
-            <label for="createMindmap">Generate mindmap? Breaks down concepts to an atomic level to help Intuitive learning</label>
+            <label for="createMindmap">Generate mindmap? Breaks down concepts to an atomic level to help Intuitive
+                learning</label>
             <input type="checkbox" id="createMindmap" name="createMindmap" value="yes" checked>
 
             <!----Quiz element-->
@@ -452,4 +477,5 @@
         <div id="debug-indicator" class="debug-indicator">Loading...<span id="timestamp"></span></div>
     </div>
 </body>
+
 </html>
