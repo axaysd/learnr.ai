@@ -122,7 +122,7 @@ def mindmap():
     concept = data['concept']
     print(f"Received mindmap request for concept: {concept}")
     
-    mindmap_prompt = f"For {concept} Please draw a visually appealing Graphviz graph with an opinionated recommendation of which topics should be taught in what order. An edge in the graph should denote that a subtopic should be learnt before another."
+    mindmap_prompt = f"For {concept}, Please draw a visually appealing Graphviz graph to breakdown the concept into atomic level subtopics to facilitate easy, intuitive learning."
 
     try:
         response = client.chat.completions.create(
