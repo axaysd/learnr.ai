@@ -121,7 +121,6 @@ def mindmap():
     data = request.get_json()
     concept = data['concept']
     print(f"Received mindmap request for concept: {concept}")
-    print(f"Their profession was: {profession}")
     
     mindmap_prompt = f"For {concept}, Please draw a visually appealing Graphviz graph to breakdown the concept into atomic level subtopics to facilitate easy, intuitive learning."
 
@@ -157,6 +156,7 @@ def log_data():
     profession = data.get('profession')
     
     log_entry = f"Concept: {concept}, Profession: {profession}\n"
+    print("Log entry: ",log_entry)
     
     log_file_path = 'user_log.txt'  # Change this path as needed
     with open(log_file_path, 'a') as log_file:
