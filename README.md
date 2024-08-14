@@ -1,4 +1,4 @@
-An application that uses Generative AI to explain new concepts in a Quick, Intuitive, Effective, Personalized and Fun way!
+An application that uses Generative AI to explain new concepts in an Intuitive and Effective way!
 Uses Hooked principles to make users more engaged.
 
 The idea to make learning as Intuitive as possible is to generate a mindmap that breaks down any concept that the user wants to learn to an atomic level.
